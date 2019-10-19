@@ -129,9 +129,22 @@ class DenseNet(nn.Module):
         out = out.view(inputs.size(0), -1)
         # use a fully connected classifier here
         classifier = nn.Linear(out.size(1), self.n_classes)
+        classifier.to(next(self.parameters()).device)
         return classifier(out)
 
 # example for running a denseNet
 d1 = torch.rand(480000).reshape(1, 3, 400, 400)
 net = DenseNet(10)
+label = torch.tensor([3]).long()
+
+# use GPU if it exists
+if torch.cuda.is_available():
+    print('using cuda')
+    d1 = d1.cuda()
+    net = net.cuda()
+    label = label.cuda()
+
+# compute
 out = net(d1)
+lose = F.cross_entropy(out, label)
+print(lose)
