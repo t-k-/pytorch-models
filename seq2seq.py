@@ -203,7 +203,7 @@ loss_fun = nn.NLLLoss()
 if debug:
     print_interval = 10
 else:
-    print_interval = 100
+    print_interval = 1000
 
 batch_loss = 0
 
@@ -264,5 +264,6 @@ while True:
         print(translate(encoder, decoder, "you are nothing"))
         print(translate(encoder, decoder, "we are the people"))
         print(translate(encoder, decoder, "they are cruel and obviously rapists"))
+        print()
 
     iteration += 1
