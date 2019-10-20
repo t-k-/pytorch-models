@@ -52,7 +52,6 @@ eng_prefixes = (
     "i am ", "i m ",
     "he is", "he s ",
     "this is", "this s ",
-    "that is", "that s ",
     "you are", "you re ",
     "we are", "we re ",
     "they are", "they re "
@@ -202,16 +201,15 @@ dec_opt = optim.SGD(decoder.parameters(), lr=0.01)
 loss_fun = nn.NLLLoss()
 
 if debug:
-    n_iters = 100
     print_interval = 10
 else:
-    n_iters = 75000 * 100
     print_interval = 100
 
-training_pairs = [tensorsFromPair(random.choice(all_pairs)) for _ in range(n_iters)]
 batch_loss = 0
 
-for iteration, pair in enumerate(training_pairs):
+iteration = 0
+while True:
+    pair = tensorsFromPair(random.choice(all_pairs))
     input, label = pair[0], pair[1]
 
     hidden = encoder.initHidden()
@@ -231,7 +229,9 @@ for iteration, pair in enumerate(training_pairs):
 
     loss = 0
 
-    teach_prob = 1.0 - iteration / n_iters
+    teach_prob = 1.0 - (iteration / 50000)
+    if teach_prob < 0.2: teach_prob = 0.2
+
     teacher = True if random.random() < teach_prob else False
 
     for j in range(label_len):
@@ -257,10 +257,12 @@ for iteration, pair in enumerate(training_pairs):
         print('#%u' % iteration, avg_loss, 'teach_rate=%f' % teach_prob)
 
         # evaluate
-        print(translate(encoder, decoder, "i am a doctor"))
-        print(translate(encoder, decoder, "he is greater"))
+        print(translate(encoder, decoder, "i am always not good enough"))
+        print(translate(encoder, decoder, "he is wrong but this is not bad news"))
         print(translate(encoder, decoder, "this is so good"))
-        print(translate(encoder, decoder, "that is not all"))
+        print(translate(encoder, decoder, "this is bad situation"))
         print(translate(encoder, decoder, "you are nothing"))
         print(translate(encoder, decoder, "we are the people"))
-        print(translate(encoder, decoder, "they are using their power"))
+        print(translate(encoder, decoder, "they are cruel and obviously rapists"))
+
+    iteration += 1
