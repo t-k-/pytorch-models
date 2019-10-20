@@ -133,6 +133,42 @@ def tensorsFromPair(pair):
     label_tensor = tensorFromWords(bow[1], pair[1])
     return (input_tensor, label_tensor)
 
+def translate(encoder, decoder, en_sentence):
+    with torch.no_grad():
+        words = [stemmer.stem(w) for w in nltk.word_tokenize(en_sentence)]
+        for w in words:
+            if w not in bow[0].word2index:
+                return u"<some word(s) not mapped>"
+        input = tensorFromWords(bow[0], words)
+        input_len = input.size(0)
+        hidden = encoder.initHidden()
+
+        codes = torch.zeros(MAX_LENGTH, hidden_size, device=device)
+
+        for i in range(input_len):
+            code, hidden = encoder(input[i], hidden)
+            codes[i] = code[0, 0]
+
+        decoder_input = torch.tensor([[SOS_idx]], device=device)
+
+        decoded_words = []
+
+        for j in range(MAX_LENGTH):
+            decode, hidden, attention = decoder(decoder_input, hidden, codes)
+
+            top_val, top_idx = decode.topk(1)
+            word = u'<unknown>'
+            if top_idx.item() in bow[1].index2word:
+                word = bow[1].index2word[top_idx.item()]
+            decoded_words.append(word)
+
+            if top_idx.item() == EOS_idx:
+                break
+            # feed the output back to decoder
+            decoder_input = top_idx.squeeze().detach()
+
+    return u" ".join(decoded_words)
+
 # print(all_pairs[0])
 # print(tensorsFromPair(all_pairs[0]))
 
@@ -199,3 +235,10 @@ for iteration, pair in enumerate(training_pairs):
         avg_loss = batch_loss / print_interval
         batch_loss = 0
         print('#%u' % iteration, avg_loss, 'teach_rate=%f' % teach_prob)
+
+        # evaluate
+        print(translate(encoder, decoder, "this is so good"))
+        print(translate(encoder, decoder, "rapid technology development"))
+        print(translate(encoder, decoder, "this is so good"))
+        print(translate(encoder, decoder, "I live for money"))
+        print(translate(encoder, decoder, "human and freedom is greater than socialist"))
