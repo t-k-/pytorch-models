@@ -175,18 +175,19 @@ for iteration, pair in enumerate(training_pairs):
 
     loss = 0
 
-    teacher = True if random.random() < 0.5 else False
+    teach_prob = 1.0 - iteration / n_iters
+    teacher = True if random.random() < teach_prob else False
 
     for j in range(label_len):
         decode, hidden, attention = decoder(decoder_input, hidden, codes)
         loss += loss_fun(decode, label[j])
-#        if not teacher:
-#            top_val, top_idx = decode.topk(1)
-#            decoder_input = top_idx.squeeze().detach()
-#            if decoder_input.item() == EOS_idx:
-#                break
-#        else:
-        decoder_input = label[j]
+        if teacher:
+            decoder_input = label[j]
+        else:
+            top_val, top_idx = decode.topk(1)
+            decoder_input = top_idx.squeeze().detach()
+            if decoder_input.item() == EOS_idx:
+                break
 
     loss.backward()
     enc_opt.step()
@@ -197,4 +198,4 @@ for iteration, pair in enumerate(training_pairs):
     if iteration % print_interval == 0:
         avg_loss = batch_loss / print_interval
         batch_loss = 0
-        print('#%u' % iteration, avg_loss)
+        print('#%u' % iteration, avg_loss, 'teach_rate=%f' % teach_prob)
