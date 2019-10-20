@@ -6,21 +6,24 @@ from torch import optim
 import jieba
 import nltk
 
+import random
+import re
+
 debug = 0
 
 stemmer = nltk.stem.SnowballStemmer('english')
 # nltk.download('punkt')
 
 def read_lines(file_path):
-    fh = open(file_path, encoding='utf-8')
-    content = fh.read().strip()
-    content = content.lower()
+    fh = open(file_path, 'r', newline='\n', encoding='utf-8')
+    content = fh.read()
+    content = content.strip()
     lines = content.split('\n')
     fh.close()
     return lines
 
-zh_lines = read_lines('dataset/chinese.txt')
-en_lines = read_lines('dataset/english.txt')
+en_lines = read_lines('dataset/e7.txt')
+zh_lines = read_lines('dataset/c7.txt')
 
 SOS_idx = 0
 EOS_idx = 1
@@ -40,13 +43,29 @@ class BoW:
 
 bow = [BoW(), BoW()]
 
-MAX_LENGTH = 30
+MAX_LENGTH = 10
 all_pairs = []
 
 tot_lines = len(en_lines)
 
+eng_prefixes = (
+    "i am ", "i m ",
+    "he is", "he s ",
+    "this is", "this s ",
+    "that is", "that s ",
+    "you are", "you re ",
+    "we are", "we re ",
+    "they are", "they re "
+)
+
 for l, pair in enumerate(zip(en_lines, zh_lines)):
     en_sentence, zh_sentence = pair
+
+    en_sentence = en_sentence.lower()
+    en_sentence = re.sub(r'\W+', ' ', en_sentence)
+
+    zh_sentence = re.sub(r'\W+', ' ', zh_sentence)
+
     en_words = [stemmer.stem(w) for w in nltk.word_tokenize(en_sentence)]
     if len(en_words) >= MAX_LENGTH:
         continue
@@ -54,12 +73,13 @@ for l, pair in enumerate(zip(en_lines, zh_lines)):
         break
     print('line %u / %u' % (l, tot_lines), end='\r')
     zh_words = [w for w in jieba.cut(zh_sentence, cut_all=False)]
-    # print(en_sentence)
-    # print(en_words)
-    # print(u" ".join(zh_words))
-    bow[0].addWords(en_words)
-    bow[1].addWords(zh_words)
-    all_pairs.append((en_words, zh_words))
+    if len(zh_words) < MAX_LENGTH and len(en_words) < MAX_LENGTH:
+        if en_sentence.startswith(eng_prefixes):
+            print(u" ".join(en_words))
+            print(u" ".join(zh_words))
+            bow[0].addWords(en_words)
+            bow[1].addWords(zh_words)
+            all_pairs.append((en_words, zh_words))
 
 print('%u pairs of training sentenses' % len(all_pairs))
 print('%u total of English words' % bow[0].n_words)
@@ -134,6 +154,7 @@ def tensorsFromPair(pair):
     return (input_tensor, label_tensor)
 
 def translate(encoder, decoder, en_sentence):
+    print('translate: [%s]' % en_sentence)
     with torch.no_grad():
         words = [stemmer.stem(w) for w in nltk.word_tokenize(en_sentence)]
         for w in words:
@@ -180,12 +201,11 @@ enc_opt = optim.SGD(encoder.parameters(), lr=0.01)
 dec_opt = optim.SGD(decoder.parameters(), lr=0.01)
 loss_fun = nn.NLLLoss()
 
-import random
 if debug:
     n_iters = 100
     print_interval = 10
 else:
-    n_iters = 75000
+    n_iters = 75000 * 100
     print_interval = 100
 
 training_pairs = [tensorsFromPair(random.choice(all_pairs)) for _ in range(n_iters)]
@@ -237,8 +257,10 @@ for iteration, pair in enumerate(training_pairs):
         print('#%u' % iteration, avg_loss, 'teach_rate=%f' % teach_prob)
 
         # evaluate
+        print(translate(encoder, decoder, "i am a doctor"))
+        print(translate(encoder, decoder, "he is greater"))
         print(translate(encoder, decoder, "this is so good"))
-        print(translate(encoder, decoder, "rapid technology development"))
-        print(translate(encoder, decoder, "this is so good"))
-        print(translate(encoder, decoder, "I live for money"))
-        print(translate(encoder, decoder, "human and freedom is greater than socialist"))
+        print(translate(encoder, decoder, "that is not all"))
+        print(translate(encoder, decoder, "you are nothing"))
+        print(translate(encoder, decoder, "we are the people"))
+        print(translate(encoder, decoder, "they are using their power"))
