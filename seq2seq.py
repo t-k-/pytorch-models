@@ -43,7 +43,7 @@ class BoW:
 
 bow = [BoW(), BoW()]
 
-MAX_LENGTH = 10
+MAX_LENGTH = 15
 all_pairs = []
 
 tot_lines = len(en_lines)
@@ -52,6 +52,8 @@ eng_prefixes = (
     "i am ", "i m ",
     "it ", "he ",
     "she ", "this ",
+    "there ", "so ",
+    "and ", "but ",
     "that ", "you ",
     "we ", "they ",
 )
