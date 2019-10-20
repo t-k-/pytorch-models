@@ -51,7 +51,9 @@ tot_lines = len(en_lines)
 eng_prefixes = (
     "i am ", "i m ",
     "he is", "he s ",
+    "she is", "she s ",
     "this is", "this s ",
+    "that is", "that s ",
     "you are", "you re ",
     "we are", "we re ",
     "they are", "they re "
@@ -70,7 +72,7 @@ for l, pair in enumerate(zip(en_lines, zh_lines)):
         continue
     if debug and l > 300:
         break
-    print('line %u / %u' % (l, tot_lines), end='\r')
+    #print('line %u / %u' % (l, tot_lines), end='\r')
     zh_words = [w for w in jieba.cut(zh_sentence, cut_all=False)]
     if len(zh_words) < MAX_LENGTH and len(en_words) < MAX_LENGTH:
         if en_sentence.startswith(eng_prefixes):
