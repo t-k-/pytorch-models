@@ -43,7 +43,7 @@ class BoW:
 
 bow = [BoW(), BoW()]
 
-MAX_LENGTH = 15
+MAX_LENGTH = 10
 all_pairs = []
 
 tot_lines = len(en_lines)
@@ -72,7 +72,7 @@ for l, pair in enumerate(zip(en_lines, zh_lines)):
         continue
     if debug and l > 300:
         break
-    zh_words = [w for w in jieba.cut(zh_sentence, cut_all=True)]
+    zh_words = [w for w in jieba.cut(zh_sentence, cut_all=False)]
     if len(zh_words) < MAX_LENGTH and len(en_words) < MAX_LENGTH:
         if len(zh_words) < 3 or len(en_words) < 3:
             continue
