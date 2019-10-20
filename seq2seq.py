@@ -50,16 +50,13 @@ tot_lines = len(en_lines)
 
 eng_prefixes = (
     "i am ", "i m ",
-    "it is", "it s ",
-    "he is", "he s ",
-    "she is", "she s ",
-    "this is", "this s ",
-    "that is", "that s ",
-    "you are", "you re ",
-    "we are", "we re ",
-    "they are", "they re "
+    "it ", "he ",
+    "she ", "this ",
+    "that ", "you ",
+    "we ", "they ",
 )
 
+fh_pairs = open('pairs.txt', 'w', encoding='utf-8')
 for l, pair in enumerate(zip(en_lines, zh_lines)):
     en_sentence, zh_sentence = pair
 
@@ -73,14 +70,16 @@ for l, pair in enumerate(zip(en_lines, zh_lines)):
         continue
     if debug and l > 300:
         break
-    #print('line %u / %u' % (l, tot_lines), end='\r')
     zh_words = [w for w in jieba.cut(zh_sentence, cut_all=False)]
     if len(zh_words) < MAX_LENGTH and len(en_words) < MAX_LENGTH:
         if len(zh_words) < 3 or len(en_words) < 3:
             continue
         if en_sentence.startswith(eng_prefixes):
-            print(u" ".join(en_words))
-            print(u" ".join(zh_words))
+            print('[%u / %u]' % (l, tot_lines), end='\r')
+            fh_pairs.write(u" ".join(en_words))
+            fh_pairs.write("\n")
+            fh_pairs.write(u" ".join(zh_words))
+            fh_pairs.write("\n")
             bow[0].addWords(en_words)
             bow[1].addWords(zh_words)
             all_pairs.append((en_words, zh_words))
@@ -88,6 +87,7 @@ for l, pair in enumerate(zip(en_lines, zh_lines)):
 print('%u pairs of training sentenses' % len(all_pairs))
 print('%u total of English words' % bow[0].n_words)
 print('%u total of Chinese words' % bow[1].n_words)
+fh_pairs.close()
 
 
 class EncoderRNN(nn.Module):
@@ -262,13 +262,12 @@ while True:
         print('#%u' % iteration, avg_loss, 'teach_rate=%f' % teach_prob)
 
         # evaluate
-        print(translate(encoder, decoder, "i am always not good enough"))
-        print(translate(encoder, decoder, "he is wrong but this is not bad news"))
-        print(translate(encoder, decoder, "this is so good"))
-        print(translate(encoder, decoder, "this is bad situation"))
-        print(translate(encoder, decoder, "you are nothing"))
-        print(translate(encoder, decoder, "we are the people"))
-        print(translate(encoder, decoder, "they are cruel and obviously rapists"))
-        print()
+        fh = open('translate.txt', encoding='utf-8')
+        lines = fh.read().split('\n')
+        for line in lines:
+            if len(line.strip()) > 0:
+                print(translate(encoder, decoder, line.strip()))
+        fh.close()
+        print('')
 
     iteration += 1
