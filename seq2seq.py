@@ -52,7 +52,7 @@ for l, pair in enumerate(zip(en_lines, zh_lines)):
         continue
     if debug and l > 300:
         break
-    print('line %u %u' % (l, tot_lines), end='\r')
+    print('line %u / %u' % (l, tot_lines), end='\r')
     zh_words = [w for w in jieba.cut(zh_sentence, cut_all=False)]
     # print(en_sentence)
     # print(en_words)
@@ -180,13 +180,13 @@ for iteration, pair in enumerate(training_pairs):
     for j in range(label_len):
         decode, hidden, attention = decoder(decoder_input, hidden, codes)
         loss += loss_fun(decode, label[j])
-        if not teacher:
-            top_val, top_idx = decode.topk(1)
-            decoder_input = top_idx.squeeze().detach()
-            if decoder_input.item() == EOS_idx:
-                break
-        else:
-            decoder_input = label[j]
+#        if not teacher:
+#            top_val, top_idx = decode.topk(1)
+#            decoder_input = top_idx.squeeze().detach()
+#            if decoder_input.item() == EOS_idx:
+#                break
+#        else:
+        decoder_input = label[j]
 
     loss.backward()
     enc_opt.step()
