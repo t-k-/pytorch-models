@@ -236,8 +236,7 @@ while True:
 
     loss = 0
 
-    teach_prob = 1.0 - (iteration / 50000)
-    if teach_prob < 0.2: teach_prob = 0.2
+    teach_prob = 0.5
 
     teacher = True if random.random() < teach_prob else False
 
