@@ -70,13 +70,13 @@ for l, pair in enumerate(zip(en_lines, zh_lines)):
     en_words = [stemmer.stem(w) for w in nltk.word_tokenize(en_sentence)]
     if len(en_words) >= MAX_LENGTH:
         continue
-    if debug and l > 300:
+    if debug and l > 3000:
         break
     zh_words = [w for w in jieba.cut(zh_sentence, cut_all=False)]
     if len(zh_words) < MAX_LENGTH and len(en_words) < MAX_LENGTH:
         if len(zh_words) < 3 or len(en_words) < 3:
             continue
-        if en_sentence.startswith(eng_prefixes):
+        if debug or en_sentence.startswith(eng_prefixes):
             print('[%u / %u]' % (l, tot_lines), end='\r')
             fh_pairs.write(u" ".join(en_words))
             fh_pairs.write("\n")
@@ -101,9 +101,10 @@ class EncoderRNN(nn.Module):
         self.gru = nn.GRU(hidden_size, hidden_size)
 
     def forward(self, input, hidden):
+        # set batch size and channel size to 1
         embedded = self.embedding(input).view(1, 1, -1)
-        output = embedded
-        output, hidden = self.gru(output, hidden)
+        output, hidden = self.gru(embedded, hidden)
+
         return output, hidden
 
     def initHidden(self):
@@ -131,6 +132,7 @@ class AttnDecoderRNN(nn.Module):
 
         attn_weights = F.softmax(
             self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
+
         attn_applied = torch.bmm(attn_weights.unsqueeze(0),
                                  encoder_outputs.unsqueeze(0))
 
@@ -184,6 +186,7 @@ def translate(encoder, decoder, en_sentence):
             decode, hidden, attention = decoder(decoder_input, hidden, codes)
 
             top_val, top_idx = decode.topk(1)
+
             word = u'<unknown>'
             if top_idx.item() in bow[1].index2word:
                 word = bow[1].index2word[top_idx.item()]
@@ -242,6 +245,7 @@ while True:
 
     for j in range(label_len):
         decode, hidden, attention = decoder(decoder_input, hidden, codes)
+
         loss += loss_fun(decode, label[j])
         if teacher:
             decoder_input = label[j]
@@ -251,11 +255,11 @@ while True:
             if decoder_input.item() == EOS_idx:
                 break
 
-    loss.backward()
-    enc_opt.step()
-    dec_opt.step()
-
-    batch_loss += loss.item() / label_len
+    if loss != 0:
+        loss.backward()
+        enc_opt.step()
+        dec_opt.step()
+        batch_loss += loss.item() / label_len
 
     if iteration % print_interval == 0:
         avg_loss = batch_loss / print_interval
